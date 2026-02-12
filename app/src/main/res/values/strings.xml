@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MindArc</string>
+    <string name="accessibility_service_description">MindArc needs accessibility permission to monitor and block restricted apps. This allows the app to enforce screen time restrictions by detecting when you try to open blocked apps.</string>
+    <string name="accessibility_service_summary">Enables app blocking to help you stay focused.</string>
+</resources>
