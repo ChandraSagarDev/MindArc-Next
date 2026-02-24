@@ -199,7 +199,10 @@ Please refer to our [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed guideli
 
 ## 📄 License
 
-This project maintains the same license as the original MindArc project. Please refer to the LICENSE file for details.
+⚠️ This project is licensed for educational and research use only.  
+Commercial use is not permitted without explicit permission from the authors.
+
+Please refer to the LICENSE file for details.
 
 ---
 
