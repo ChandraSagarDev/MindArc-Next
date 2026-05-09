@@ -38,9 +38,21 @@ class ReadingViewModel @Inject constructor(private val repository: MindArcReposi
         }
     }
 
-    fun saveAppProvidedReading(durationMinutes: Int, points: Int) {
+    fun saveAppProvidedReading(
+        durationMinutes: Int,
+        isQuizPerfect: Boolean,
+        hasLeftApp: Boolean
+    ) {
         viewModelScope.launch {
-            val unlockDuration = repository.calculateReadingUnlockDuration(durationMinutes)
+            val effectivePerfect = isQuizPerfect && !hasLeftApp
+            val unlockDuration = repository.calculateReadingUnlockDuration(durationMinutes, effectivePerfect)
+            var points = repository.calculateReadingPoints(durationMinutes, effectivePerfect)
+
+            // If the user left the app mid-session, void the Perfect Score bonus and apply the focus penalty.
+            if (hasLeftApp) {
+                points = (points * 0.7f).toInt()
+            }
+
             val activityRecord = ActivityRecord(
                 activityType = ActivityType.READING_APP_PROVIDED,
                 pointsEarned = points,
@@ -48,9 +60,13 @@ class ReadingViewModel @Inject constructor(private val repository: MindArcReposi
                 readingContentId = _readingContent.value?.id
             )
             val activityId = repository.insertActivity(activityRecord)
-            repository.createUnlockSession(activityId, unlockDuration)
-            repository.updateProgressAfterActivity(activityRecord)
-            repository.updateProgressAfterUnlock()
+            repository.updateProgressAfterActivity(
+                activity = activityRecord,
+                actualReadingTime = durationMinutes,
+                appProvidedLeftApp = hasLeftApp,
+                appProvidedQuizPerfect = isQuizPerfect
+            )
+            // Unlock only when user explicitly redeems points (spendPointsToUnlock)
         }
     }
 
@@ -65,8 +81,6 @@ class ReadingViewModel @Inject constructor(private val repository: MindArcReposi
                 userReadingTitle = userReadingTitle ?: "User Provided Reading"
             )
             val activityId = repository.insertActivity(activityRecord)
-            repository.createUnlockSession(activityId, unlockDuration)
-
             val reflectionObj = ReadingReflection(
                 activityRecordId = activityId,
                 question = "What did you read?",
@@ -74,7 +88,7 @@ class ReadingViewModel @Inject constructor(private val repository: MindArcReposi
             )
             repository.insertReflection(reflectionObj)
             repository.updateProgressAfterActivity(activityRecord)
-            repository.updateProgressAfterUnlock()
+            // Unlock only when user explicitly redeems points (spendPointsToUnlock)
         }
     }
 }

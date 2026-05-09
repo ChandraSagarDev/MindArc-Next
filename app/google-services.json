@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "321747136445",
+    "project_id": "mindarc-548f7",
+    "storage_bucket": "mindarc-548f7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:321747136445:android:0af332a3d7eba8e38b2cd4",
+        "android_client_info": {
+          "package_name": "com.example.mindarc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "321747136445-3pj328vcdpmh85bu37fa13t07227g43o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mindarc",
+            "certificate_hash": "179da11e2d473b153bf00d7e8eef1dc3047cff75"
+          }
+        },
+        {
+          "client_id": "321747136445-sjkqao54inib0srjc21lq1fnag21fp31.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7NJ8vb7y2uzAX7Un-lTi7vI4P6m_VS2g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "321747136445-sjkqao54inib0srjc21lq1fnag21fp31.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

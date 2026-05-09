@@ -1,10 +1,12 @@
 package com.example.mindarc.ui.activities
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
@@ -27,11 +29,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.lifecycleScope
+import com.example.mindarc.MainActivity
 import com.example.mindarc.data.model.RestrictedApp
+import com.example.mindarc.data.model.UserProgress
 import com.example.mindarc.data.repository.MindArcRepository
+import com.example.mindarc.ui.navigation.Screen
+import com.example.mindarc.ui.components.ErrorBanner
+import com.example.mindarc.ui.components.GlassCard
+import com.example.mindarc.ui.components.MindArcPrimaryButton
+import com.example.mindarc.ui.components.MindArcSecondaryButton
 import com.example.mindarc.ui.theme.MindArcTheme
+import com.example.mindarc.ui.viewmodel.MindArcViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -49,7 +62,12 @@ class BlockActivity : ComponentActivity() {
         val isCountdown = intent.getBooleanExtra("isCountdown", false)
         val countdownSeconds = intent.getIntExtra("countdownSeconds", 10)
 
-        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
         if (vibrator.hasVibrator()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
@@ -62,6 +80,9 @@ class BlockActivity : ComponentActivity() {
         setContent {
             MindArcTheme {
                 var app by remember { mutableStateOf<RestrictedApp?>(null) }
+                val viewModel: MindArcViewModel = hiltViewModel()
+                val userProgress by viewModel.userProgress.collectAsState()
+                val minutesNeeded = 10
 
                 LaunchedEffect(Unit) {
                     app = packageName?.let { repository.getAppByPackageName(it) }
@@ -76,6 +97,24 @@ class BlockActivity : ComponentActivity() {
                 } else {
                     BlockedScreen(
                         app = app,
+                        userProgress = userProgress,
+                        pointsNeeded = minutesNeeded,
+                        onUnlockWithPoints = {
+                            lifecycleScope.launch {
+                                if (viewModel.trySpendPointsToUnlock(minutesNeeded)) {
+                                    finish()
+                                }
+                                // If false, balance was insufficient; stay on block screen
+                            }
+                        },
+                        onDoActivities = {
+                            val intent = Intent(this, MainActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                                putExtra("startDestination", Screen.ActivitySelection.route)
+                            }
+                            startActivity(intent)
+                            finish()
+                        },
                         onClose = { finish() }
                     )
                 }
@@ -196,6 +235,10 @@ fun CountdownScreen(
 @Composable
 fun BlockedScreen(
     app: RestrictedApp?,
+    userProgress: UserProgress?,
+    pointsNeeded: Int,
+    onUnlockWithPoints: () -> Unit,
+    onDoActivities: () -> Unit,
     onClose: () -> Unit
 ) {
     val isTimeBlocked = app?.dailyLimitInMillis != 0L
@@ -204,6 +247,8 @@ fun BlockedScreen(
         "You've used up your daily limit for ${app?.appName ?: "this app"}."
     else
         "${app?.appName ?: "This app"} is restricted. Complete an activity to unlock it."
+    val currentPoints = userProgress?.totalPoints ?: 0
+    val hasEnoughPoints = currentPoints >= pointsNeeded
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -249,17 +294,94 @@ fun BlockedScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = onClose,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                containerAlpha = 0.45f,
+                borderAlpha = 0.25f,
             ) {
-                Text("Close", fontWeight = FontWeight.Bold)
+                Row(
+                    modifier = Modifier.padding(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            text = "Your Balance (minutes earned)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "$currentPoints min",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (!hasEnoughPoints) {
+                        Text(
+                            text = "Short of ${pointsNeeded - currentPoints} min",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            if (hasEnoughPoints) {
+                MindArcPrimaryButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onUnlockWithPoints,
+                    height = 56.dp,
+                    hero = true,
+                ) {
+                    Text(
+                        "Spend $pointsNeeded min to Unlock",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                TextButton(
+                    onClick = onDoActivities
+                ) {
+                    Text("Earn Minutes with Activity Instead")
+                }
+            } else {
+                ErrorBanner(
+                    title = "Insufficient balance",
+                    message = "Complete an activity to earn more minutes.",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                MindArcPrimaryButton(
+                    text = "Go to Activities",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onDoActivities,
+                    height = 56.dp,
+                    hero = true,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            MindArcSecondaryButton(
+                text = "Close",
+                modifier = Modifier.fillMaxWidth(),
+                height = 56.dp,
+                onClick = onClose,
+            )
         }
     }
 }
+

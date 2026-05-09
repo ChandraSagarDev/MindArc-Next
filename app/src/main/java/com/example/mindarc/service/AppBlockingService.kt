@@ -113,18 +113,22 @@ class AppBlockingService : AccessibilityService() {
     }
 
     private suspend fun checkAndBlockApp(packageName: String, apps: List<RestrictedApp>) {
-        val app = apps.find { it.packageName == packageName }
-        if (app != null) {
-            val restrictedApp = app
-            val totalUsage = restrictedApp.usageTodayInMillis
-            val totalLimit = restrictedApp.dailyLimitInMillis + restrictedApp.extraTimePurchased
-            val usageExceeded = restrictedApp.dailyLimitInMillis > 0 && totalUsage > totalLimit
+        val app = apps.find { it.packageName == packageName } ?: return
+        val restrictedApp = app
+        val totalUsageThisApp = restrictedApp.usageTodayInMillis
+        val totalLimitThisApp = restrictedApp.dailyLimitInMillis + restrictedApp.extraTimePurchased
+        val perAppUsageExceeded = restrictedApp.dailyLimitInMillis > 0 && totalUsageThisApp > totalLimitThisApp
 
-            val shouldBlock = if (restrictedApp.dailyLimitInMillis > 0) {
-                usageExceeded
-            } else {
-                restrictedApp.isBlocked
-            }
+        val commonLimit = repository.getCommonDailyLimitMillis()
+        val blockedApps = apps.filter { it.isBlocked }
+        val totalUsageAllBlocked = blockedApps.sumOf { it.usageTodayInMillis }
+        val commonLimitExceeded = commonLimit > 0 && restrictedApp.isBlocked && totalUsageAllBlocked >= commonLimit
+
+        val shouldBlock = when {
+            commonLimit > 0 && restrictedApp.isBlocked -> commonLimitExceeded
+            restrictedApp.dailyLimitInMillis > 0 -> perAppUsageExceeded
+            else -> restrictedApp.isBlocked
+        }
 
             if (shouldBlock) {
                 val activeSession = repository.getActiveSession()
@@ -137,7 +141,7 @@ class AppBlockingService : AccessibilityService() {
                     blockApp(packageName, isCountdown = false)
                 }
             } else if (restrictedApp.dailyLimitInMillis > 0) {
-                val remainingTime = totalLimit - totalUsage
+                val remainingTime = totalLimitThisApp - totalUsageThisApp
 
                 if (remainingTime in 1..COUNTDOWN_DURATION_MS && !countdownActive.contains(packageName)) {
                     countdownActive.add(packageName)
@@ -150,7 +154,6 @@ class AppBlockingService : AccessibilityService() {
                     repository.updateApp(updatedApp)
                 }
             }
-        }
     }
 
     private fun blockApp(packageName: String, isCountdown: Boolean = false, countdownSeconds: Int = 0) {

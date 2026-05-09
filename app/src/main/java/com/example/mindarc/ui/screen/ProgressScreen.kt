@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.mindarc.ui.components.MindArcBottomBarForNav
+import com.example.mindarc.ui.components.MindArcTopAppBar
 import com.example.mindarc.ui.components.StatCard
 import com.example.mindarc.viewmodel.ProgressViewModel
 
@@ -39,28 +42,20 @@ fun ProgressScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        "Progress Journey", 
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleLarge
-                    ) 
-                },
+            MindArcTopAppBar(
+                title = "Profile",
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            Icons.Default.ArrowBack, 
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
             )
         },
+        bottomBar = { MindArcBottomBarForNav(navController) },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
@@ -87,7 +82,7 @@ fun ProgressScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 StatCard(
-                    title = "Total Points",
+                    title = "Total Minutes Earned",
                     value = "${userProgress?.totalPoints ?: 0}",
                     icon = Icons.Default.EmojiEvents,
                     modifier = Modifier.weight(1f),
@@ -164,7 +159,7 @@ fun ProgressScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(12.dp))
                 AchievementCard(
                     title = "Century Club",
-                    description = "Earned over 100 points.",
+                    description = "Earned over 100 minutes.",
                     achieved = progress.totalPoints >= 100,
                     icon = Icons.Default.Stars
                 )

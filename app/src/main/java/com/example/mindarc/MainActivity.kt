@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.example.mindarc.ui.navigation.NavGraph
+import com.example.mindarc.ui.navigation.Screen
 import com.example.mindarc.ui.theme.MindArcTheme
 import com.example.mindarc.utils.hasUsageStatsPermission
 import com.example.mindarc.utils.isAccessibilityServiceEnabled
@@ -39,6 +40,9 @@ class MainActivity : ComponentActivity() {
 
         requestNotificationPermission()
 
+        val prefs = getSharedPreferences("mindarc_prefs", MODE_PRIVATE)
+        val isOnboardingCompleted = prefs.getBoolean("onboarding_completed", false)
+
         setContent {
             MindArcTheme {
                 Surface(
@@ -46,11 +50,15 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    val startDestination = if (isAccessibilityServiceEnabled(this) && Settings.canDrawOverlays(this)) {
-                        "home"
+                    val explicitStartDestination = intent.getStringExtra("startDestination")
+                    val defaultStartDestination = if (!isOnboardingCompleted) {
+                        Screen.Onboarding.route
+                    } else if (isAccessibilityServiceEnabled(this) && Settings.canDrawOverlays(this)) {
+                        Screen.Home.route
                     } else {
-                        "permissions"
+                        Screen.Permissions.route
                     }
+                    val startDestination = explicitStartDestination ?: defaultStartDestination
                     NavGraph(navController = navController, startDestination = startDestination)
                 }
             }

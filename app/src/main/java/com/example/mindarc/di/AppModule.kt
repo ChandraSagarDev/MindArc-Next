@@ -1,5 +1,7 @@
 package com.example.mindarc.di
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
@@ -24,4 +26,12 @@ object AppModule {
     fun provideIoDispatcher(): CoroutineDispatcher {
         return Dispatchers.IO
     }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 }

@@ -10,11 +10,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.DirectionsRun
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.Brush
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,40 +36,42 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.mindarc.ui.navigation.Screen
+import com.example.mindarc.ui.components.GlassCard
+import com.example.mindarc.ui.components.MindArcBottomBarForNav
+import com.example.mindarc.ui.components.MindArcBrandedTopAppBar
+import com.example.mindarc.ui.theme.ActivityCardKind
+import com.example.mindarc.ui.theme.ActivityScaffoldKind
+import com.example.mindarc.ui.theme.activityCardGradientColors
+import com.example.mindarc.ui.theme.rememberActivityScaffoldBrush
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivitySelectionScreen(navController: NavController) {
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        "Select Activity", 
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleLarge
-                    ) 
-                },
+            MindArcBrandedTopAppBar(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            Icons.Default.ArrowBack, 
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+                }
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        bottomBar = { MindArcBottomBarForNav(navController) },
+        containerColor = androidx.compose.ui.graphics.Color.Transparent
     ) { padding ->
+        val pageBrush = rememberActivityScaffoldBrush(ActivityScaffoldKind.Selection)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(pageBrush)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -76,68 +83,147 @@ fun ActivitySelectionScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "Fuel Your Focus",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                text = "Select Activity",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Text(
-                text = "Choose a challenge to earn points and unlock your restricted apps.",
+                text = "Choose your focus for this session.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
+                modifier = Modifier.padding(top = 6.dp, bottom = 24.dp)
             )
 
-            // Pushups Card
-            ActivityCard(
-                title = "AI Pushups",
-                description = "Build physical strength with AI-powered rep counting.",
-                icon = Icons.Filled.FitnessCenter,
-                onClick = { navController.navigate(Screen.PushupsActivity.route) },
-                gradientColors = listOf(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.06f)
-                ),
-                rewardText = "1 pt / rep"
-            )
+            ActivityGroup(
+                title = "Physical",
+                subtitle = "Move your body to earn unlock time."
+            ) {
+                ActivityCard(
+                    title = "AI Pushups",
+                    description = "Build physical strength with AI-powered rep counting.",
+                    icon = Icons.Filled.FitnessCenter,
+                    onClick = { navController.navigate(Screen.PushupsActivity.route) },
+                    gradientColors = activityCardGradientColors(
+                        MaterialTheme.colorScheme,
+                        ActivityCardKind.Pushups
+                    ),
+                    rewardText = "1 min / rep"
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // Squats Card
-            ActivityCard(
-                title = "AI Squats",
-                description = "Strengthen your lower body with automated squat detection.",
-                icon = Icons.Filled.DirectionsRun,
-                onClick = { navController.navigate(Screen.SquatsActivity.route) },
-                gradientColors = listOf(
-                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
-                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.06f)
-                ),
-                rewardText = "1 pt / rep"
-            )
+                ActivityCard(
+                    title = "AI Squats",
+                    description = "Strengthen your lower body with automated squat detection.",
+                    icon = Icons.AutoMirrored.Filled.DirectionsRun,
+                    onClick = { navController.navigate(Screen.SquatsActivity.route) },
+                    gradientColors = activityCardGradientColors(
+                        MaterialTheme.colorScheme,
+                        ActivityCardKind.Squats
+                    ),
+                    rewardText = "1 min / rep"
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // Reading Card
-            ActivityCard(
-                title = "Mindful Reading",
-                description = "Expand your knowledge with curated articles and summaries.",
-                icon = Icons.Filled.MenuBook,
-                onClick = { navController.navigate(Screen.ReadingActivity.route) },
-                gradientColors = listOf(
-                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f),
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
-                ),
-                rewardText = "2 pts / min"
-            )
+                ActivityCard(
+                    title = "Plank Hold",
+                    description = "60s forearm plank — front or side camera view. Vibration cues every 10s.",
+                    icon = Icons.Filled.Timer,
+                    onClick = { navController.navigate(Screen.PlankHoldActivity.route) },
+                    gradientColors = activityCardGradientColors(
+                        MaterialTheme.colorScheme,
+                        ActivityCardKind.Plank
+                    ),
+                    rewardText = "Up to 60 min"
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ActivityCard(
+                    title = "Steps Walked",
+                    description = "Read today’s steps from Health Connect and claim a daily reward.",
+                    icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+                    onClick = { navController.navigate(Screen.StepsWalkedActivity.route) },
+                    gradientColors = activityCardGradientColors(
+                        MaterialTheme.colorScheme,
+                        ActivityCardKind.Steps
+                    ),
+                    rewardText = "Daily claim"
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            ActivityGroup(
+                title = "Non‑physical",
+                subtitle = "Calm your mind, connect, or create."
+            ) {
+                ActivityCard(
+                    title = "Mindful Reading",
+                    description = "Expand your knowledge with curated articles and summaries.",
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                    onClick = { navController.navigate(Screen.ReadingActivity.route) },
+                    gradientColors = activityCardGradientColors(
+                        MaterialTheme.colorScheme,
+                        ActivityCardKind.ReadingCurated
+                    ),
+                    rewardText = "2 min / min"
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ActivityCard(
+                    title = "Speed-Dial Challenge",
+                    description = "Call a friend for 5+ minutes instead of texting or scrolling.",
+                    icon = Icons.Filled.Phone,
+                    onClick = { navController.navigate(Screen.SpeedDialChallenge.route) },
+                    gradientColors = activityCardGradientColors(
+                        MaterialTheme.colorScheme,
+                        ActivityCardKind.SpeedDial
+                    ),
+                    rewardText = "10 min + badge"
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ActivityCard(
+                    title = "Mindful Breathing",
+                    description = "Take a 3-minute guided breathing break away from your screen.",
+                    icon = Icons.Filled.SelfImprovement,
+                    onClick = { navController.navigate(Screen.BreathingActivity.route) },
+                    gradientColors = activityCardGradientColors(
+                        MaterialTheme.colorScheme,
+                        ActivityCardKind.Breathing
+                    ),
+                    rewardText = "8 min • 8 min"
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ActivityCard(
+                    title = "Trace-to-Earn",
+                    description = "Trace the outline in 60 seconds. Stay close to the line to earn social media time.",
+                    icon = Icons.Filled.Brush,
+                    onClick = { navController.navigate(Screen.TraceToEarn.route) },
+                    gradientColors = activityCardGradientColors(
+                        MaterialTheme.colorScheme,
+                        ActivityCardKind.Trace
+                    ),
+                    rewardText = "1-5 min unlock"
+                )
+            }
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            Surface(
+            GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                containerAlpha = 0.22f,
+                borderAlpha = 0.14f,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -160,6 +246,37 @@ fun ActivitySelectionScreen(navController: NavController) {
             }
             
             Spacer(modifier = Modifier.height(24.dp))
+        }
+        }
+    }
+}
+
+@Composable
+private fun ActivityGroup(
+    title: String,
+    subtitle: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    // No hard borders — tonal surface only (`redesigns/mindarc_obsidian/DESIGN.md`)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
+            )
+            content()
         }
     }
 }
@@ -188,10 +305,10 @@ fun ActivityCard(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
-            1.dp, 
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f)
         ),
-        shadowElevation = 2.dp
+        shadowElevation = 0.dp
     ) {
         Box(
             modifier = Modifier
@@ -214,7 +331,7 @@ fun ActivityCard(
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.size(56.dp).shadow(2.dp, RoundedCornerShape(16.dp))
+                        modifier = Modifier.size(56.dp).shadow(1.dp, RoundedCornerShape(16.dp))
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -230,7 +347,7 @@ fun ActivityCard(
                         Text(
                             text = title,
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -238,7 +355,6 @@ fun ActivityCard(
                             text = description,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 20.sp
                         )
                     }
                 }
@@ -251,7 +367,7 @@ fun ActivityCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
@@ -259,7 +375,7 @@ fun ActivityCard(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                     
@@ -267,7 +383,7 @@ fun ActivityCard(
                         Text(
                             text = "Start",
                             style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Icon(

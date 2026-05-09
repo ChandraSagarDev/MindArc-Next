@@ -42,21 +42,36 @@ val LocalDarkModeState = staticCompositionLocalOf<DarkModeState> {
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDarkTheme,
-    secondary = SecondaryDarkTheme,
-    tertiary = TertiaryDarkTheme,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    surfaceVariant = SurfaceVariantDark,
     onPrimary = OnPrimaryDark,
-    onSecondary = OnSecondaryDark,
-    onTertiary = OnTertiaryDark,
+    primaryContainer = PrimaryGradientEnd,
+    onPrimaryContainer = Color.White,
+    secondary = SecondaryDarkTheme,
+    onSecondary = Color(0xFF280067),
+    secondaryContainer = Color(0xFF5516BE),
+    onSecondaryContainer = Color(0xFFD9C8FF),
+    tertiary = TertiaryDarkTheme,
+    onTertiary = Color(0xFF003B56),
+    tertiaryContainer = Color(0xFF34B5FA),
+    onTertiaryContainer = Color(0xFF003047),
+    background = BackgroundDark,
     onBackground = OnBackgroundDark,
+    surface = SurfaceDark,
     onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = OnSurfaceVariantDark,
-    outline = OutlineDark,
+    surfaceDim = BackgroundDark,
+    surfaceBright = SurfaceBrightDark,
+    surfaceContainerLowest = SurfaceContainerLowestDark,
+    surfaceContainerLow = SurfaceContainerLowDark,
+    surfaceContainer = SurfaceContainerDark,
+    surfaceContainerHigh = SurfaceContainerHighDark,
+    surfaceContainerHighest = SurfaceContainerHighestDark,
+    outline = Color(0xFF73757D),
     outlineVariant = OutlineVariantDark,
     error = Error,
-    onError = OnError
+    onError = Color(0xFF490006),
+    errorContainer = Color(0xFF9F0519),
+    onErrorContainer = Color(0xFFFFA8A3),
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -100,6 +115,7 @@ fun MindArcTheme(
     if (!view.isInEditMode) {
         androidx.compose.runtime.SideEffect {
             val window = (view.context as Activity).window
+            @Suppress("DEPRECATION")
             window.statusBarColor = if (darkTheme) {
                 BackgroundDark.toArgb()
             } else {

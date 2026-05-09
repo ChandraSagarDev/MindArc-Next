@@ -1,12 +1,13 @@
 package com.example.mindarc.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,6 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mindarc.ui.navigation.Screen
+import com.example.mindarc.ui.theme.ActivityCardKind
+import com.example.mindarc.ui.theme.ActivityScaffoldKind
+import com.example.mindarc.ui.theme.activityCardGradientColors
+import com.example.mindarc.ui.theme.rememberActivityScaffoldBrush
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,19 +28,25 @@ fun ReadingActivityScreen(navController: NavController) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Reading Mode", fontWeight = FontWeight.Bold) },
+                title = { Text("Reading Mode", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color.Transparent
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Color.Transparent
     ) { padding ->
+        val pageBrush = rememberActivityScaffoldBrush(ActivityScaffoldKind.ReadingHub)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(pageBrush)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -49,8 +60,8 @@ fun ReadingActivityScreen(navController: NavController) {
             Text(
                 text = "Choose Your Experience",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Text(
@@ -63,13 +74,13 @@ fun ReadingActivityScreen(navController: NavController) {
             ActivityCard(
                 title = "Curated Articles",
                 description = "Read short, insightful articles and test your knowledge with a quick quiz.",
-                icon = Icons.Filled.MenuBook,
+                icon = Icons.AutoMirrored.Filled.MenuBook,
                 onClick = { navController.navigate(Screen.AppProvidedReading.route) },
-                gradientColors = listOf(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.06f)
+                gradientColors = activityCardGradientColors(
+                    MaterialTheme.colorScheme,
+                    ActivityCardKind.ReadingCurated
                 ),
-                rewardText = "Earn 10+ Points"
+                rewardText = "Earn 10+ focus min"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -79,14 +90,15 @@ fun ReadingActivityScreen(navController: NavController) {
                 description = "Read your own books or articles. Just set the timer and summarize later.",
                 icon = Icons.Filled.AutoStories,
                 onClick = { navController.navigate(Screen.UserProvidedReading.route) },
-                gradientColors = listOf(
-                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f),
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+                gradientColors = activityCardGradientColors(
+                    MaterialTheme.colorScheme,
+                    ActivityCardKind.ReadingPersonal
                 ),
-                rewardText = "Earn 2 Points / Min"
+                rewardText = "Earn 2 min / min"
             )
             
             Spacer(modifier = Modifier.height(32.dp))
+        }
         }
     }
 }

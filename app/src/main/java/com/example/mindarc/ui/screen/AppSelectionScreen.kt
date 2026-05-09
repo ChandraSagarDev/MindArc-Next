@@ -9,13 +9,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -37,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mindarc.data.model.RestrictedApp
 import com.example.mindarc.ui.viewmodel.MindArcViewModel
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +71,11 @@ fun AppSelectionScreen(
         restrictedApps.count { it.isBlocked }
     }
 
+    val commonDailyLimitMillis by viewModel.commonDailyLimitMillis.collectAsState()
+    val totalUsageBlockedApps = remember(restrictedApps) {
+        restrictedApps.filter { it.isBlocked }.sumOf { it.usageTodayInMillis }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -81,7 +89,7 @@ fun AppSelectionScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            Icons.Default.ArrowBack, 
+                            Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
@@ -142,12 +150,108 @@ fun AppSelectionScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Common daily limit for selected apps
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Daily limit (all selected apps combined)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "If total usage exceeds this limit, selected apps will be blocked until tomorrow or you unlock.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    var customLimitText by remember { mutableStateOf("") }
+
+                    val presetMillis = listOf(
+                        0L to "No limit",
+                        TimeUnit.MINUTES.toMillis(30) to "30 min",
+                        TimeUnit.HOURS.toMillis(1) to "1 h",
+                        TimeUnit.HOURS.toMillis(2) to "2 h",
+                        TimeUnit.HOURS.toMillis(3) to "3 h"
+                    )
+
+                    LaunchedEffect(commonDailyLimitMillis) {
+                        if (commonDailyLimitMillis != 0L && presetMillis.none { it.first == commonDailyLimitMillis }) {
+                            val minutes = TimeUnit.MILLISECONDS.toMinutes(commonDailyLimitMillis)
+                            customLimitText = minutes.toString()
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        presetMillis.forEach { (millis, label) ->
+                            FilterChip(
+                                selected = commonDailyLimitMillis == millis,
+                                onClick = { viewModel.setCommonDailyLimitMillis(millis) },
+                                label = { Text(label, style = MaterialTheme.typography.labelMedium) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = customLimitText,
+                        onValueChange = { input ->
+                            customLimitText = input.filter { it.isDigit() }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        label = { Text("Custom daily limit (minutes)") },
+                        singleLine = true,
+                        trailingIcon = {
+                            TextButton(
+                                onClick = {
+                                    val minutes = customLimitText.toLongOrNull()
+                                    if (minutes != null && minutes >= 0) {
+                                        viewModel.setCommonDailyLimitMillis(TimeUnit.MINUTES.toMillis(minutes))
+                                    }
+                                }
+                            ) {
+                                Text("Set")
+                            }
+                        }
+                    )
+                    if (blockedCount > 0 && commonDailyLimitMillis > 0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Total usage today: ${formatScreenTime(totalUsageBlockedApps)} / ${formatScreenTime(commonDailyLimitMillis)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (totalUsageBlockedApps >= commonDailyLimitMillis)
+                                MaterialTheme.colorScheme.error
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
+                label = { Text("Search apps") },
                 placeholder = { 
                     Text(
                         "Search apps...",
@@ -332,6 +436,13 @@ fun AppListItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                Text(
+                    text = "Screen time today: ${formatScreenTime(app.usageTodayInMillis)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             Switch(
@@ -343,8 +454,19 @@ fun AppListItem(
                     uncheckedThumbColor = MaterialTheme.colorScheme.outline,
                     uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                 ),
-                modifier = Modifier.scale(0.85f)
+                // Touch target / accessibility: keep switch at its default size.
             )
         }
+    }
+}
+
+private fun formatScreenTime(millis: Long): String {
+    if (millis <= 0) return "0m"
+    val hours = TimeUnit.MILLISECONDS.toHours(millis)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(millis) % 60
+    return when {
+        hours > 0 -> "${hours}h ${minutes}m"
+        minutes > 0 -> "${minutes}m"
+        else -> "<1m"
     }
 }

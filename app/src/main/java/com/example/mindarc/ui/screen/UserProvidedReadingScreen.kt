@@ -5,6 +5,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -23,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mindarc.ui.navigation.Screen
+import com.example.mindarc.ui.theme.ActivityScaffoldKind
+import com.example.mindarc.ui.theme.rememberActivityScaffoldBrush
+import com.example.mindarc.utils.rememberReducedMotionEnabled
 import com.example.mindarc.viewmodel.ReadingViewModel
 import kotlinx.coroutines.delay
 
@@ -33,6 +38,7 @@ fun UserProvidedReadingScreen(navController: NavController) {
     val context = LocalContext.current
     val viewModel: ReadingViewModel = hiltViewModel()
     val scrollState = rememberScrollState()
+    val reducedMotion = rememberReducedMotionEnabled()
 
     var pdfFileName by remember { mutableStateOf<String?>(null) }
 
@@ -75,12 +81,19 @@ fun UserProvidedReadingScreen(navController: NavController) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
-        }
+        },
+        containerColor = Color.Transparent
     ) { padding ->
+        val pageBrush = rememberActivityScaffoldBrush(ActivityScaffoldKind.UserProvidedReading)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(pageBrush)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -95,8 +108,16 @@ fun UserProvidedReadingScreen(navController: NavController) {
             // 1. Goal Setting Section
             AnimatedVisibility(
                 visible = !hasTimerStarted,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+                enter = if (reducedMotion) {
+                    fadeIn()
+                } else {
+                    fadeIn() + expandVertically()
+                },
+                exit = if (reducedMotion) {
+                    fadeOut()
+                } else {
+                    fadeOut() + shrinkVertically()
+                }
             ) {
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -309,7 +330,11 @@ fun UserProvidedReadingScreen(navController: NavController) {
             // 3. Reflection Section
             AnimatedVisibility(
                 visible = isTimerFinished,
-                enter = fadeIn() + slideInVertically { it / 2 }
+                enter = if (reducedMotion) {
+                    fadeIn()
+                } else {
+                    fadeIn() + slideInVertically { it / 2 }
+                }
             ) {
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -335,6 +360,7 @@ fun UserProvidedReadingScreen(navController: NavController) {
                         OutlinedTextField(
                             value = reflection,
                             onValueChange = { reflection = it },
+                            label = { Text("Reflection") },
                             placeholder = { Text("Summarize your session (min 10 chars)") },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -363,13 +389,14 @@ fun UserProvidedReadingScreen(navController: NavController) {
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Complete & Earn Points", fontWeight = FontWeight.Bold)
+                                Text("Complete & Earn Minutes", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
+        }
         }
     }
 }

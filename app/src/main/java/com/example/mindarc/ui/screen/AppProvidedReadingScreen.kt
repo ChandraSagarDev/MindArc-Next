@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Timer
@@ -19,19 +19,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mindarc.data.model.QuizQuestion
 import com.example.mindarc.ui.navigation.Screen
+import com.example.mindarc.ui.theme.ActivityScaffoldKind
+import com.example.mindarc.ui.theme.rememberActivityScaffoldBrush
 import com.example.mindarc.viewmodel.ReadingViewModel
 import kotlinx.coroutines.delay
 
@@ -120,13 +120,19 @@ fun AppProvidedReadingScreen(navController: NavController) {
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Color.Transparent
     ) { padding ->
+        val pageBrush = rememberActivityScaffoldBrush(ActivityScaffoldKind.AppProvidedReading)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(pageBrush)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -157,7 +163,7 @@ fun AppProvidedReadingScreen(navController: NavController) {
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                     Spacer(modifier = Modifier.height(48.dp))
                     Button(
@@ -219,7 +225,6 @@ fun AppProvidedReadingScreen(navController: NavController) {
                             Text(
                                 text = para,
                                 style = MaterialTheme.typography.bodyLarge,
-                                lineHeight = 28.sp,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
                         }
@@ -322,6 +327,10 @@ fun AppProvidedReadingScreen(navController: NavController) {
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 } else {
+                    val correctCount = score / 10
+                    val wrongCount = (quizQuestions.size - correctCount).coerceAtLeast(0)
+                    val isQuizPerfect = correctCount == quizQuestions.size
+
                     Spacer(modifier = Modifier.weight(0.5f))
                     Surface(
                         shape = CircleShape,
@@ -335,28 +344,58 @@ fun AppProvidedReadingScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(32.dp))
                     Text("Session Complete!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     
-                    val finalScore = if (hasLeftApp) (score * 0.7).toInt() else score
-                    
                     Text(
-                        "You earned $finalScore points for this reading session.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                        "Correct: $correctCount   •   Wrong: $wrongCount",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 12.dp)
                     )
-                    
+
                     if (hasLeftApp) {
                         Text(
-                            "Focus Penalty Applied: -30% points for leaving the app.",
+                            "Perfect Score bonus is voided for this session, because you left the app.",
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(top = 8.dp)
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+                    } else if (isQuizPerfect) {
+                        Text(
+                            "Perfect Score! Your focus bonus is eligible—collect rewards below.",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+                    } else {
+                        Text(
+                            "Collect your rewards. Your unlock time is based on reading duration and quiz performance.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 16.dp)
                         )
                     }
+
+                    // Small helper copy: keeps the “earned” mental model clear.
+                    Text(
+                        "Tip: Staying in the app helps you keep Perfect Score eligibility.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                     
                     Spacer(modifier = Modifier.height(48.dp))
                     Button(
                         onClick = {
-                            viewModel.saveAppProvidedReading(totalTimeInSeconds / 60, finalScore)
+                            viewModel.saveAppProvidedReading(
+                                durationMinutes = totalTimeInSeconds / 60,
+                                isQuizPerfect = isQuizPerfect,
+                                hasLeftApp = hasLeftApp
+                            )
                             navController.navigate(Screen.Home.route) {
                                 popUpTo(Screen.Home.route) { inclusive = true }
                             }
@@ -374,6 +413,7 @@ fun AppProvidedReadingScreen(navController: NavController) {
                 }
             }
         }
+        }
     }
 }
 
@@ -388,7 +428,6 @@ fun QuizQuestionView(question: QuizQuestion, selectedOption: String?, onOptionSe
             text = question.question, 
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Medium,
-            lineHeight = 32.sp
         )
         
         Spacer(modifier = Modifier.height(12.dp))

@@ -48,6 +48,10 @@ class PoseDetectionProcessor(
                             val metrics = poseAnalyzer.analyzeSquatPose(pose, width, height)
                             onPoseDetected(metrics, pose, imageSize)
                         }
+                        ActivityType.PLANK_HOLD -> {
+                            val metrics = poseAnalyzer.analyzePlankHoldPose(pose, width, height)
+                            onPoseDetected(metrics, pose, imageSize)
+                        }
                         else -> {
                             // Fallback or other activities
                         }

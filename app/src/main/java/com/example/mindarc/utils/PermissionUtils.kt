@@ -19,6 +19,7 @@ fun isAccessibilityServiceEnabled(context: Context): Boolean {
     return enabledServices.contains(fullComponent) || enabledServices.contains(shortComponent)
 }
 
+@Suppress("DEPRECATION")
 fun hasUsageStatsPermission(context: Context): Boolean {
     val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
     val mode = appOps.checkOpNoThrow(

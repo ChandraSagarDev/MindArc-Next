@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import com.example.mindarc.domain.SocialMediaScreenTime
+import com.example.mindarc.domain.getSocialMediaUsageTier
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
@@ -31,6 +33,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mindarc.ui.navigation.Screen
 import com.example.mindarc.ui.viewmodel.MindArcViewModel
+import com.example.mindarc.ui.components.MindArcBottomBarForNav
+import com.example.mindarc.ui.components.MindArcBrandedTopAppBar
+import com.example.mindarc.ui.components.MindArcPermissionCard
+import com.example.mindarc.ui.components.MindArcPrimaryButton
+import com.example.mindarc.ui.components.MindArcSecondaryButton
+import com.example.mindarc.ui.components.mindArcPillLabelTextStyle
 import com.example.mindarc.ui.components.StatCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +53,9 @@ fun HomeScreen(
     val restrictedApps by viewModel.restrictedApps.collectAsState()
     val isInitialized by viewModel.isInitialized.collectAsState()
     val screenTime by viewModel.todayScreenTime.collectAsState()
+    val userName by viewModel.userName.collectAsState()
+    var showSocialMediaDialog by remember { mutableStateOf(false) }
+    var socialMediaData by remember { mutableStateOf<SocialMediaScreenTime?>(null) }
 
     // Check for "Display over other apps" permission
     var hasOverlayPermission by remember { 
@@ -64,29 +75,24 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        "MindArc", 
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
-                    ) 
-                },
-                actions = {
-                    IconButton(onClick = { navController.navigate(Screen.Progress.route) }) {
-                        Icon(
-                            Icons.Default.BarChart,
-                            contentDescription = "Progress",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
+            MindArcBrandedTopAppBar {
+                IconButton(onClick = { navController.navigate(Screen.Auth.route) }) {
+                    Icon(
+                        Icons.Default.AccountCircle,
+                        contentDescription = "Account",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                IconButton(onClick = { navController.navigate(Screen.Progress.route) }) {
+                    Icon(
+                        Icons.Default.BarChart,
+                        contentDescription = "Insights",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
         },
+        bottomBar = { MindArcBottomBarForNav(navController) },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         if (!isInitialized) {
@@ -106,10 +112,12 @@ fun HomeScreen(
 
                 // Permission Warning Card
                 if (!hasOverlayPermission) {
-                    PermissionWarningCard(
-                        title = "Permission Required",
-                        description = "MindArc needs 'Display over other apps' to block restricted apps effectively.",
-                        onGrantClick = {
+                    MindArcPermissionCard(
+                        title = "Permission required",
+                        description = "We use 'Display over other apps' so MindArc can show the block screen when you open restricted apps.",
+                        icon = Icons.Default.Warning,
+                        actionText = "Grant permission",
+                        onAction = {
                             val intent = Intent(
                                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                 Uri.parse("package:${context.packageName}")
@@ -121,15 +129,20 @@ fun HomeScreen(
                 }
 
                 Text(
-                    text = "Welcome back!",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
                     text = "Ready to focus?",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = if (!userName.isNullOrBlank()) {
+                        "Welcome back, ${userName}! Keep building your streak."
+                    } else {
+                        "Track minutes earned and stay on top of your goals."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp)
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -169,7 +182,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     StatCard(
-                        title = "Points",
+                        title = "Minutes Earned",
                         value = "${userProgress?.totalPoints ?: 0}",
                         icon = Icons.Default.EmojiEvents,
                         modifier = Modifier.weight(1f),
@@ -209,6 +222,8 @@ fun HomeScreen(
                         onClick = {
                             if (screenTime == "Need Permission") {
                                 context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                            } else {
+                                showSocialMediaDialog = true
                             }
                         },
                         gradientColors = listOf(
@@ -231,57 +246,174 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Action Buttons
-                Button(
+                MindArcPrimaryButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 64.dp,
+                    hero = true,
                     onClick = { navController.navigate(Screen.ActivitySelection.route) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp)
-                        .shadow(8.dp, RoundedCornerShape(20.dp)),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.AddCircleOutline, contentDescription = null)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            "Start Activity",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Icon(
+                        Icons.Default.AddCircleOutline,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        "Start Activity",
+                        style = mindArcPillLabelTextStyle(FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedButton(
+                MindArcSecondaryButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 64.dp,
                     onClick = { navController.navigate(Screen.AppSelection.route) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.5.dp, 
-                        MaterialTheme.colorScheme.outlineVariant
-                    )
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Settings, contentDescription = null)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            "Manage Restricted Apps",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        "Manage restricted apps",
+                        style = mindArcPillLabelTextStyle(FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
+
+    // Social media screen time dialog (when Screen Time card is clicked and permission granted)
+    LaunchedEffect(showSocialMediaDialog) {
+        if (showSocialMediaDialog) {
+            socialMediaData = viewModel.getSocialMediaScreenTime()
+        }
+    }
+    if (showSocialMediaDialog) {
+        SocialMediaScreenTimeDialog(
+            data = socialMediaData,
+            onDismiss = {
+                showSocialMediaDialog = false
+                socialMediaData = null
+            },
+            formatTime = { millis ->
+                val hours = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(millis)
+                val minutes = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(millis) % 60
+                when {
+                    hours > 0 -> "${hours}h ${minutes}m"
+                    minutes > 0 -> "${minutes}m"
+                    else -> "0m"
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun SocialMediaScreenTimeDialog(
+    data: SocialMediaScreenTime?,
+    onDismiss: () -> Unit,
+    formatTime: (Long) -> String
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Social media today",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            if (data == null) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(32.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else {
+                val tier = getSocialMediaUsageTier(data.totalMillis)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = tier.emoji,
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Column {
+                            Text(
+                                text = tier.label,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Total: ${formatTime(data.totalMillis)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    if (data.appUsages.isEmpty()) {
+                        Text(
+                            text = "No social media apps with usage found on this device.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text = "By app:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        data.appUsages.forEach { entry ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = entry.appName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = formatTime(entry.usageMillis),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done", color = MaterialTheme.colorScheme.primary)
+            }
+        }
+    )
 }
 
 @Composable

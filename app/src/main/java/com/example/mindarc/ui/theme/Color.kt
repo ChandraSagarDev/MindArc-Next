@@ -2,55 +2,70 @@ package com.example.mindarc.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Premium Soft Color Palette - Light Mode
-// Inspired by modern SaaS dashboards with soft, gentle accents
-val PrimaryDark = Color(0xFF4A90E2)      // Soft Blue
-val PrimaryMain = Color(0xFF6BA3E8)       // Light Blue
-val PrimaryLight = Color(0xFF8BB5ED)      // Lighter Blue
+// Design tokens inspired by `mindarc_new_design reference_/src/index.css`.
+// Theme intent: calm, glassy dark UI with a purple primary and bright, readable accents.
 
-val SecondaryDark = Color(0xFF52C9A2)    // Soft Teal/Green
-val SecondaryMain = Color(0xFF6DD5B8)    // Light Teal
-val SecondaryLight = Color(0xFF88E0C9)   // Lighter Teal
+// Primary palette (shared across light/dark)
+val PrimaryMain = Color(0xFFA855F7)      // #a855f7
+val SecondaryMain = Color(0xFFAC8AFF)    // #ac8aff
+val TertiaryMain = Color(0xFF61C2FF)     // #61c2ff
 
-val TertiaryDark = Color(0xFFFFB84D)     // Soft Orange
-val TertiaryMain = Color(0xFFFFC966)     // Light Orange
-val TertiaryLight = Color(0xFFFFD980)    // Lighter Orange
+// Status semantics (used by the component library)
+val Success = Color(0xFF34D399)          // emerald-ish
+val Warning = Color(0xFFFFD93D)          // amber/yellow
+// `redesigns/*` + mindarc_obsidian: alarm red for blocked/errors
+val Error = Color(0xFFFF716C)            // #ff716c
+val Info = TertiaryMain
 
-val AccentYellow = Color(0xFFFFD93D)     // Soft Yellow
-val AccentGreen = Color(0xFF7ED321)       // Fresh Green
-
-val Background = Color(0xFFFAFBFC)       // Soft White
-val Surface = Color(0xFFFFFFFF)          // Pure White
-val SurfaceVariant = Color(0xFFF5F7FA)   // Very Light Gray
-val Error = Color(0xFFFF6B6B)            // Soft Red
+// Light mode (only to keep app functional; the reference is dark-forward)
+val Background = Color(0xFFF7F8FF)
+val Surface = Color(0xFFFFFFFF)
+val SurfaceVariant = Color(0xFFEFF2FA)
 
 val OnPrimary = Color.White
 val OnSecondary = Color.White
-val OnTertiary = Color(0xFF1A1A1A)
-val OnBackground = Color(0xFF1A1A1A)     // Dark Gray
-val OnSurface = Color(0xFF1A1A1A)
-val OnSurfaceVariant = Color(0xFF6B7280) // Medium Gray
+val OnTertiary = Color(0xFF0B0E14)
+val OnBackground = Color(0xFF0B0E14)
+val OnSurface = Color(0xFF0B0E14)
+val OnSurfaceVariant = Color(0xFF6B7280)
 val OnError = Color.White
 
-val Outline = Color(0xFFE5E7EB)          // Light Border
-val OutlineVariant = Color(0xFFD1D5DB)   // Medium Border
+val Outline = Color(0xFFD6DAE3)
+val OutlineVariant = Color(0xFFC2C8D3)
 
-// Premium Soft Color Palette - Dark Mode
-// Deep neutral backgrounds with muted highlights
-val PrimaryDarkTheme = Color(0xFF7BB3F0)      // Muted Blue
-val SecondaryDarkTheme = Color(0xFF7DD3B8)     // Muted Teal
-val TertiaryDarkTheme = Color(0xFFFFC966)      // Muted Orange
+// Dark mode (the “glass + calm coach” feel)
+val PrimaryDarkTheme = PrimaryMain
+val SecondaryDarkTheme = SecondaryMain
+val TertiaryDarkTheme = TertiaryMain
 
-val BackgroundDark = Color(0xFF0F1419)        // Deep Dark Blue-Gray
-val SurfaceDark = Color(0xFF1A1F2E)           // Dark Surface
-val SurfaceVariantDark = Color(0xFF252B3A)    // Slightly Lighter Surface
+val BackgroundDark = Color(0xFF0B0E14)
+val SurfaceDark = Color(0xFF0B0E14)
+// Closest mapping: reference `--color-surface-container` (#161a21)
+val SurfaceVariantDark = Color(0xFF161A21)
 
-val OnPrimaryDark = Color(0xFF0F1419)
-val OnSecondaryDark = Color(0xFF0F1419)
-val OnTertiaryDark = Color(0xFF0F1419)
-val OnBackgroundDark = Color(0xFFE5E7EB)      // Light Text
-val OnSurfaceDark = Color(0xFFE5E7EB)
-val OnSurfaceVariantDark = Color(0xFF9CA3AF)  // Muted Text
+// Primary CTAs use white text on violet gradient (`redesigns/dashboard_violet_accent`)
+val OnPrimaryDark = Color.White
+val OnSecondaryDark = Color(0xFF0B0E14)
+val OnTertiaryDark = Color(0xFF0B0E14)
+val OnBackgroundDark = Color(0xFFECEDF6)
+val OnSurfaceDark = Color(0xFFECEDF6)
+val OnSurfaceVariantDark = Color(0xFFA9ABB3)
 
-val OutlineDark = Color(0xFF374151)           // Dark Border
-val OutlineVariantDark = Color(0xFF4B5563)     // Lighter Dark Border
+// Reference `--color-outline-variant` (#45484f)
+val OutlineDark = Color(0xFF45484F)
+val OutlineVariantDark = Color(0xFF45484F)
+
+// Convenience semantics for later component refactors.
+val Focus = PrimaryDarkTheme
+val Block = Error
+
+/** End stop for primary pill gradients (135°), matches `primary-gradient` in activities redesign */
+val PrimaryGradientEnd = Color(0xFF7C3AED) // violet-600
+
+/** Surfaces from redesigns folder HTML Tailwind tokens */
+val SurfaceContainerLowestDark = Color(0xFF000000)
+val SurfaceContainerLowDark = Color(0xFF10131A)
+val SurfaceContainerDark = Color(0xFF161A21)
+val SurfaceContainerHighDark = Color(0xFF1C2028)
+val SurfaceContainerHighestDark = Color(0xFF22262F)
+val SurfaceBrightDark = Color(0xFF282C36)
